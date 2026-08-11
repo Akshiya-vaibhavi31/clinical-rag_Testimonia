@@ -33,7 +33,8 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -45,17 +46,10 @@ from src.hybrid_retrieval import hybrid_search_raw
 from src.citations import build_citation_record
 from src.database import init_db, log_query_and_answer, get_source as get_db_source
 from src.api.schemas import (
-    SearchRequest,
-    AskRequest,
-    CompareRequest,
-    SearchResponse,
-    AskResponse,
-    CompareResponse,
-    ChunkResult,
-    CitationInfo,
-    VerificationSummary,
-    SourceDetail,
-    HealthResponse,
+    SearchRequest, AskRequest, CompareRequest,
+    SearchResponse, AskResponse, CompareResponse,
+    ChunkResult, CitationInfo, VerificationSummary,
+    SourceDetail, HealthResponse,
 )
 
 # ---------- Configuration via environment variables ----------
@@ -124,10 +118,7 @@ async def log_requests(request: Request, call_next):
     duration_ms = (time.time() - start_time) * 1000
     logger.info(
         "%s %s -> %s (%.1fms)",
-        request.method,
-        request.url.path,
-        response.status_code,
-        duration_ms,
+        request.method, request.url.path, response.status_code, duration_ms,
     )
     return response
 
@@ -149,7 +140,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 def load_all_chunks() -> list[dict]:
     """Load the full chunk corpus from disk."""
     import json
-
     chunks_path = PROJECT_ROOT / "data" / "processed" / "chunks.jsonl"
     chunks = []
     with open(chunks_path, "r", encoding="utf-8") as f:
@@ -164,17 +154,15 @@ def chunks_to_citation_infos(evidence_chunks: list[dict]) -> list[CitationInfo]:
     infos = []
     for chunk in evidence_chunks:
         record = build_citation_record(chunk)
-        infos.append(
-            CitationInfo(
-                source_type=record["source_type"],
-                nct_id=record["nct_id"],
-                pmid=record["pmid"],
-                pmcid=record["pmcid"],
-                doi=record["doi"],
-                title=record["title"],
-                section=record["section"],
-            )
-        )
+        infos.append(CitationInfo(
+            source_type=record["source_type"],
+            nct_id=record["nct_id"],
+            pmid=record["pmid"],
+            pmcid=record["pmcid"],
+            doi=record["doi"],
+            title=record["title"],
+            section=record["section"],
+        ))
     return infos
 
 
@@ -188,23 +176,6 @@ def verification_report_to_summary(report):
         numeric_mismatch_count=report.get("numeric_mismatch_count", 0),
         passed=report.get("passed", False),
     )
-
-
-FRONTEND_PATH = PROJECT_ROOT / "frontend" / "index.html"
-
-
-@app.get("/", include_in_schema=False)
-async def serve_frontend():
-    """
-    Serves the frontend directly from the backend — merging what used to
-    be two separate things (backend on one port via uvicorn, frontend on
-    another via Live Server) into a single server, single command, single
-    URL. This also eliminates any real CORS concern for normal usage: the
-    frontend now IS the same origin as the API, not a separate one.
-    """
-    if not FRONTEND_PATH.exists():
-        raise HTTPException(status_code=404, detail="Frontend file not found. Expected at frontend/index.html")
-    return FileResponse(FRONTEND_PATH)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["system"])
@@ -325,14 +296,9 @@ async def ask(request: Request, body: AskRequest):
         raise HTTPException(status_code=500, detail="Failed to generate an answer due to an internal error.") from e
 
     log_query_and_answer(
-        question=body.question,
-        condition_filter=body.condition,
-        low_confidence=result["low_confidence"],
-        answer_text=result["answer_text"],
-        refused=result["refused"],
-        verification_report=result["verification_report"],
-        llm_model=GEMINI_MODEL_NAME,
-        prompt_version=PROMPT_VERSION,
+        question=body.question, condition_filter=body.condition, low_confidence=result["low_confidence"],
+        answer_text=result["answer_text"], refused=result["refused"],
+        verification_report=result["verification_report"], llm_model=GEMINI_MODEL_NAME, prompt_version=PROMPT_VERSION,
     )
 
     return AskResponse(
@@ -371,3 +337,30 @@ async def compare(request: Request, body: CompareRequest):
         citations=chunks_to_citation_infos(result["evidence_chunks"]),
         verification=verification_report_to_summary(result["verification_report"]),
     )
+
+
+# --- Serve the frontend, including any static assets it references ---
+#
+# BUG FIX (found via real testing in a fresh GitHub Codespaces environment):
+# the original approach only served index.html itself at "/" — it had no
+# way to serve OTHER files sitting next to it, like a background photo
+# referenced by a relative path in the CSS. The browser resolves that
+# relative reference against the page's OWN url ("/"), so a request for
+# "hospital-photo.jpg" actually goes to "/hospital-photo.jpg" — a path we
+# never taught the API to answer, so it silently failed and fell back to
+# the plain background color. This worked previously only because local
+# testing used VS Code's Live Server, which serves an entire folder
+# automatically — a difference in tooling that hid this exact bug until a
+# fresh environment (Codespaces) exposed it.
+#
+# StaticFiles(html=True) serves the WHOLE frontend/ directory: index.html
+# at "/" (same as before), AND any sibling file (photos, future assets) at
+# its own matching relative path — fixing this generally, not just for one
+# specific file.
+#
+# IMPORTANT: this mount must be added LAST, after every other @app.get /
+# @app.post route above. FastAPI/Starlette matches routes in registration
+# order, and a mount at "/" would otherwise catch every request — including
+# ones meant for /health, /ask, etc. — before they ever reached those
+# routes.
+app.mount("/", StaticFiles(directory=str(PROJECT_ROOT / "frontend"), html=True), name="frontend")
