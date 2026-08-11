@@ -1,0 +1,27 @@
+# Secrets — must NEVER end up inside a Docker image
+.env
+
+# Data — large, regenerable, and mounted in via volume instead (see
+# docker-compose.yml). Including this in the build context would bloat
+# every image build, and risk baking a stale snapshot of data into the
+# image that then conflicts with the mounted volume at runtime.
+data/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Version control / editor
+.git/
+.gitignore
+.DS_Store
+.vscode/
+
+# Tests aren't needed inside the runtime image
+tests/
+
+# NOTE: frontend/ is intentionally NOT excluded here — the Dockerfile
+# explicitly copies it in (COPY frontend/ ./frontend/), since the API now
+# serves it directly.

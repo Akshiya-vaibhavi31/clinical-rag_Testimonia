@@ -1,0 +1,26 @@
+# Secrets — never commit real API keys or credentials
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated data (large, regenerable — not source code)
+data/raw/
+data/processed/
+data/embeddings/
+data/vector_db/
+data/citations/
+data/experiments/
+data/eval/eval_results.json
+data/eval/eval_checkpoint.json
+data/clinical_rag.db
+data/figures/
+data/manifest/
+
+# OS/editor files
+.DS_Store
+.vscode/
+*.swp

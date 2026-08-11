@@ -1,0 +1,38 @@
+# Ruff configuration for Phase 23's CI linting step.
+#
+# DELIBERATELY LENIENT ON STYLE, STRICT ON REAL BUGS.
+#
+# This project was written over many iterations without running a linter
+# along the way (real, honest fact — not corrected retroactively here).
+# Turning on ruff's full default rule set for the first time now would
+# likely flag dozens of pure style preferences (line length, import
+# ordering) across the whole codebase — noisy, and not the kind of finding
+# that's actually worth blocking CI over. So this config keeps only the
+# rule categories that catch genuine bugs, not style opinions:
+#
+#   E, W  - pycodestyle errors/warnings (but see per-rule ignores below)
+#   F     - pyflakes: unused imports, undefined names, real correctness bugs
+#
+# If you want stricter style enforcement later (e.g. import sorting via
+# isort/"I", or docstring rules via "D"), add them deliberately — don't
+# just flip on ruff's "ALL" preset, since that will immediately flag a
+# large amount of pre-existing, working code for pure style reasons.
+
+line-length = 120  # generous — this codebase has many long, deliberately
+                    # explanatory inline comments documenting real bugs
+                    # found during development; wrapping those for a
+                    # stricter limit would hurt readability, not help it
+
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",  # line too long — many long comment lines throughout this
+             # project explain real bugs/decisions in detail; truncating
+             # them for style would lose real information
+]
+
+[lint.per-file-ignores]
+# Test files legitimately import things only used via pytest fixtures or
+# for their side effects (e.g. pytest.importorskip) — avoid false-positive
+# "unused import" flags there specifically.
+"tests/**/*.py" = ["F401"]

@@ -1,0 +1,30 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      # Real secrets (API keys) are provided at RUNTIME via this file,
+      # never baked into the image itself — consistent with Phase 20's
+      # security review. This file must exist locally (copy it from
+      # .env.example) but is never committed to git (see .gitignore) and
+      # never becomes part of the built image (see .dockerignore).
+      - .env
+    volumes:
+      # Data (corpus, embeddings, vector DB, SQLite database) lives OUTSIDE
+      # the image and is mounted in from the host. This means:
+      #   - Data you already built locally is used as-is, no rebuild needed
+      #   - Data persists across container restarts/rebuilds (a fresh
+      #     `docker compose up --build` won't wipe out your corpus)
+      #   - The image itself stays small and doesn't need your API keys
+      #     just to build
+      - ./data:/app/data
+    environment:
+      # Override the API's default bind settings for container networking:
+      # 0.0.0.0 (not 127.0.0.1) so the service is reachable from OUTSIDE
+      # the container, not just from within it.
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+    restart: unless-stopped

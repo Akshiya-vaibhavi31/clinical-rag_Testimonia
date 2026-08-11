@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testimonia — Clinical Trial &amp; Literature Search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=Fraunces:ital,wght@0,600;0,700;1,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F6F4EF;
+    --paper-raised: #FFFFFF;
+    --ink: #14181F;
+    --ink-muted: #5B6270;
+    --teal: #0B6E6E;
+    --teal-dark: #084F4F;
+    --teal-soft: #E3EFEE;
+    --amber: #F5D876;
+    --amber-soft: #FBF0C8;
+    --brick: #A6433A;
+    --brick-soft: #F3DAD7;
+    --line: #DDDACF;
+    --navy: #101B2B;
+    --radius: 4px;
+    --amber-ink: #5B4A15;
+    --amber-ink-muted: #8A7327;
+    --hover-bg: #FBFAF7;
+    --error-border: #DDBBB6;
+    --error-text: #6B3530;
+    --teal-hover: #084F4F;
+    --disabled-bg: #B9C4C4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  a { color: var(--teal-dark); }
+  button { font-family: inherit; }
+
+  /* =========================================================
+     AUTH SCREEN
+     ========================================================= */
+  #authScreen {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+  }
+  @media (max-width: 860px) {
+    #authScreen { grid-template-columns: 1fr; }
+    .auth-visual { display: none; }
+  }
+
+  .auth-visual {
+    /* Real photo goes here: place a file named hospital-photo.jpg in the
+       same folder as this HTML file. The dark navy gradient overlay keeps
+       the text readable on top of any photo — it's layered on top of the
+       image, not a replacement for it. If hospital-photo.jpg doesn't exist
+       yet, the browser just shows the plain navy color underneath, so
+       nothing breaks in the meantime. */
+    background:
+      linear-gradient(180deg, rgba(16,27,43,0.55) 0%, rgba(16,27,43,0.88) 100%),
+      var(--navy) url('hospital-photo.jpg') center center / cover no-repeat;
+    color: #EDEFF2;
+    padding: 56px 56px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-visual .wordmark { font-size: 15px; letter-spacing: 0.16em; }
+  .auth-visual .wordmark span { color: var(--amber); }
+
+  .auth-tagline {
+    font-family: 'Source Serif 4', serif;
+    font-size: 24px;
+    line-height: 1.4;
+    max-width: 400px;
+    color: #F3F1EA;
+  }
+  .auth-tagline em { color: var(--amber); font-style: italic; }
+  .auth-footnote { font-size: 12px; color: #8B94A6; margin-top: 18px; font-family: 'IBM Plex Mono', monospace; }
+
+  .auth-form-side {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 32px;
+  }
+  .auth-form-wrap { width: 100%; max-width: 360px; }
+  .auth-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 6px;
+  }
+  .auth-heading { font-family: 'Source Serif 4', serif; font-size: 26px; margin: 0 0 6px; }
+  .auth-subtext { font-size: 13.5px; color: var(--ink-muted); margin: 0 0 26px; line-height: 1.5; }
+
+  .field-group { margin-bottom: 16px; }
+  .field-label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .field-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    background: var(--paper-raised);
+    color: var(--ink);
+  }
+  .field-input:focus { outline: 2px solid var(--teal); outline-offset: 1px; border-color: var(--teal); }
+  .field-input.invalid { border-color: var(--brick); }
+  .field-input.invalid:focus { outline-color: var(--brick); }
+  .field-hint-inline { font-size: 11px; color: var(--ink-muted); margin-top: 5px; line-height: 1.4; }
+  .field-error {
+    font-size: 12px;
+    color: var(--brick);
+    margin-top: 5px;
+    min-height: 0;
+    display: none;
+  }
+  .field-error.visible { display: block; }
+
+  .auth-submit {
+    width: 100%;
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 11px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .auth-submit:hover { background: var(--teal-dark); }
+
+  .auth-switch { text-align: center; font-size: 13px; color: var(--ink-muted); margin-top: 18px; }
+  .auth-switch a { cursor: pointer; font-weight: 600; text-decoration: none; }
+
+  .auth-guest {
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    margin-top: 14px;
+  }
+  .auth-guest a { cursor: pointer; }
+
+  .auth-demo-note {
+    margin-top: 22px;
+    padding: 10px 12px;
+    background: var(--amber-soft);
+    border-left: 3px solid var(--amber);
+    font-size: 11.5px;
+    color: #5B4A15;
+    border-radius: 0 3px 3px 0;
+  }
+
+  /* =========================================================
+     APP SCREEN
+     ========================================================= */
+  /* Dark theme for the entire post-login app. Scoped to #appScreen only —
+     since these are the SAME variable names used everywhere else, every
+     component (cards, badges, evidence blocks, error states) automatically
+     adopts these dark values without needing separate dark-mode rules per
+     component. The login screen (a sibling element, not a descendant of
+     #appScreen) is untouched by this and keeps its own fixed design. */
+  #appScreen {
+    display: none;
+    background: var(--paper);
+    min-height: 100vh;
+
+    --paper: #0D1626;
+    --paper-raised: #16233C;
+    --ink: #F5F7FA;
+    --ink-muted: #AAB4C7;
+    --line: #2A3B57;
+
+    --teal: #14A098;
+    --teal-dark: #5EEAD4;
+    --teal-soft: rgba(20, 184, 166, 0.16);
+    --teal-hover: #0E8A80;
+
+    --amber-soft: rgba(245, 216, 118, 0.14);
+    --amber-ink: #E8D9A8;
+    --amber-ink-muted: #C9B77A;
+
+    --brick: #E8897C;
+    --brick-soft: rgba(232, 137, 124, 0.16);
+
+    --hover-bg: #1C2C48;
+    --error-border: rgba(232, 137, 124, 0.4);
+    --error-text: #F0C4BA;
+    --disabled-bg: #33465F;
+  }
+
+  nav.topbar {
+    background: var(--navy);
+    color: #EDEFF2;
+    padding: 14px 24px;
+  }
+  .topbar-inner {
+    max-width: 920px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .topbar-brand { font-family: 'Fraunces', serif; font-weight: 600; font-size: 26px; letter-spacing: -0.01em; }
+  .topbar-brand span { color: var(--amber); font-style: italic; }
+  .topbar-user { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .user-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    color: white;
+  }
+  .logout-link { color: #B7BECC; cursor: pointer; font-size: 12.5px; text-decoration: underline; }
+
+  html { scroll-behavior: smooth; }
+
+  /* ---- Sticky nav with section links ---- */
+  nav.topbar { position: sticky; top: 0; z-index: 10; }
+  .nav-links { display: flex; gap: 26px; }
+  .nav-links a {
+    color: var(--ink-muted);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: color 0.15s ease;
+  }
+  .nav-links a:hover { color: var(--ink); }
+
+  /* ---- Section shell ---- */
+  section.page-section {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 64px 24px;
+    scroll-margin-top: 64px;
+    position: relative;
+    z-index: 1;
+  }
+  section.page-section + section.page-section { border-top: 1px solid var(--line); }
+  .section-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal-dark);
+    margin-bottom: 10px;
+  }
+  .section-heading { font-family: 'Source Serif 4', serif; font-size: 30px; color: var(--ink); margin: 0 0 14px; line-height: 1.25; }
+  .section-body { font-size: 15px; line-height: 1.7; color: var(--ink-muted); max-width: 640px; }
+  .section-body p { margin: 0 0 14px; }
+  .section-body strong { color: var(--ink); }
+
+  /* ---- Home section ---- */
+  #home { padding-top: 80px; padding-bottom: 40px; }
+  .home-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center; }
+  @media (max-width: 760px) { .home-grid { grid-template-columns: 1fr; } }
+  .home-heading { font-family: 'Fraunces', serif; font-size: 42px; font-weight: 600; color: var(--ink); line-height: 1.15; margin: 0 0 16px; }
+  .home-heading em { color: var(--teal-dark); font-style: italic; }
+  .home-sub { font-size: 16px; color: var(--ink-muted); line-height: 1.6; margin: 0 0 26px; max-width: 460px; }
+  .cta-btn {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: var(--teal);
+    color: #06201E;
+    text-decoration: none;
+    border-radius: var(--radius);
+    padding: 12px 22px;
+  }
+  .cta-btn:hover { background: var(--teal-dark); }
+
+  /* ---- Home illustration: floating capsules + orbiting molecule ---- */
+  .illustration { position: relative; height: 280px; }
+  .capsule {
+    position: absolute;
+    width: 84px; height: 34px;
+    border-radius: 17px;
+    display: flex;
+    overflow: hidden;
+    box-shadow: 0 12px 24px rgba(0,0,0,0.35);
+    animation: floatY 6s ease-in-out infinite;
+  }
+  .capsule::before, .capsule::after { content: ""; flex: 1; }
+  .capsule::before { background: var(--teal); }
+  .capsule::after { background: var(--amber); }
+  .capsule--1 { top: 20px; left: 30px; animation-delay: 0s; }
+  .capsule--2 { top: 130px; left: 130px; width: 66px; height: 27px; animation-delay: 1.4s; animation-duration: 7s; }
+  .capsule--3 { top: 70px; left: 210px; width: 56px; height: 23px; animation-delay: 0.7s; animation-duration: 5.5s; }
+  @keyframes floatY {
+    0%, 100% { transform: translateY(0) rotate(-8deg); }
+    50% { transform: translateY(-18px) rotate(-14deg); }
+  }
+  .molecule-orbit {
+    position: absolute;
+    top: 40px; right: 10px;
+    width: 160px; height: 160px;
+    border: 1px dashed var(--line);
+    border-radius: 50%;
+    animation: spin 18s linear infinite;
+  }
+  .molecule-orbit .dot {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--brick);
+    top: -5px; left: 50%;
+    margin-left: -5px;
+    box-shadow: 0 0 12px 2px rgba(232,137,124,0.6);
+  }
+  .molecule-orbit .dot--2 { background: var(--teal-dark); box-shadow: 0 0 12px 2px rgba(94,234,212,0.5); }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .molecule-orbit--2 {
+    width: 100px; height: 100px;
+    top: 80px; right: 60px;
+    animation: spin 12s linear infinite reverse;
+  }
+
+  /* ---- About section ---- */
+  .about-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-top: 24px; }
+  .about-fact { background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+  .about-fact-num { font-family: 'IBM Plex Mono', monospace; font-size: 20px; color: var(--teal-dark); font-weight: 600; }
+  .about-fact-label { font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+
+  /* ---- Ask section disclaimer (compact) ---- */
+  .disclaimer {
+    max-width: 920px;
+    margin: 0 auto 20px;
+    padding: 10px 16px;
+    background: var(--amber-soft);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-size: 12.5px;
+    color: var(--amber-ink);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .disclaimer strong { font-weight: 600; }
+  .disclaimer-icon { font-family: 'IBM Plex Mono', monospace; font-weight: 700; flex-shrink: 0; width: 16px; text-align: center; }
+
+  /* ---- Help / FAQ section ---- */
+  .faq-item { border-bottom: 1px solid var(--line); padding: 16px 0; }
+  .faq-item:first-child { padding-top: 0; }
+  .faq-q { font-size: 15px; font-weight: 600; color: var(--ink); margin: 0 0 8px; }
+  .faq-a { font-size: 14px; color: var(--ink-muted); line-height: 1.6; margin: 0; }
+
+  /* ---- Contact section ---- */
+
+  main { max-width: 920px; margin: 0 auto; padding: 32px 24px 80px; position: relative; z-index: 1; }
+
+  /* Ambient animated background — three large, blurred, slow-drifting glows.
+     Deliberately subtle (low opacity, slow timing, heavy blur) so it reads
+     as atmosphere rather than a distraction, per the principle that
+     restrained motion lands better than busy motion. */
+  .bg-glow {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.22;
+  }
+  .bg-glow--1 {
+    width: 480px; height: 480px;
+    background: radial-gradient(circle, rgba(20,160,152,0.5), transparent 70%);
+    top: -120px; left: -100px;
+    animation: drift1 22s ease-in-out infinite;
+  }
+  .bg-glow--2 {
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(245,216,118,0.35), transparent 70%);
+    bottom: -140px; right: -80px;
+    animation: drift2 26s ease-in-out infinite;
+  }
+  .bg-glow--3 {
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, rgba(232,137,124,0.28), transparent 70%);
+    top: 40%; right: 15%;
+    animation: drift3 30s ease-in-out infinite;
+  }
+  @keyframes drift1 {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(60px, 40px); }
+  }
+  @keyframes drift2 {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-50px, -30px); }
+  }
+  @keyframes drift3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-30px, 50px) scale(1.1); }
+  }
+
+  /* Custom cursor glow — a soft trailing highlight that follows the real
+     pointer. The system cursor stays fully visible and functional; this is
+     a purely decorative companion, so accuracy and usability aren't
+     affected. Disabled on touch devices (no real pointer to follow) and
+     when the user has requested reduced motion. */
+  #cursorGlow {
+    position: fixed;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(20,160,152,0.15), transparent 70%);
+    pointer-events: none;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+    transition: left 0.12s ease-out, top 0.12s ease-out;
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bg-glow { animation: none; }
+    .query-panel { animation: none; }
+    #cursorGlow { display: none !important; }
+  }
+
+  .hero-row { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+  .hero-icon { flex-shrink: 0; }
+  .hero-heading { font-family: 'Source Serif 4', serif; font-size: 22px; margin: 0 0 4px; }
+  .hero-sub { font-size: 13.5px; color: var(--ink-muted); margin: 0; }
+
+  .query-panel {
+    background: #FFFFFF;
+    border: 2px solid var(--teal);
+    border-radius: 10px;
+    box-shadow: 0 0 0 4px rgba(20, 160, 152, 0.12), 0 10px 34px rgba(0, 0, 0, 0.4);
+    animation: panelGlow 3s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+  }
+  @keyframes panelGlow {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(20, 160, 152, 0.10), 0 10px 34px rgba(0, 0, 0, 0.4); }
+    50% { box-shadow: 0 0 0 9px rgba(20, 160, 152, 0.22), 0 10px 38px rgba(0, 0, 0, 0.45); }
+  }
+  .panel-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #0B6E6E; padding: 20px 24px 0; }
+  .query-fields { padding: 12px 24px 24px; }
+  textarea#question {
+    width: 100%;
+    resize: vertical;
+    min-height: 90px;
+    border: none;
+    outline: none;
+    font-family: 'Source Serif 4', serif;
+    font-size: 18px;
+    line-height: 1.55;
+    padding: 12px 0;
+    background: transparent;
+    color: #14181F;
+  }
+  textarea#question::placeholder { color: #9A9689; font-style: italic; }
+  .field-hint { font-size: 12px; color: #5B5850; margin-top: -2px; }
+  .filter-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; padding-top: 14px; border-top: 1px solid #E7E4D9; flex-wrap: wrap; }
+  .filter-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5B5850; }
+  select#condition { font-family: 'Inter', sans-serif; font-size: 13.5px; padding: 6px 10px; border: 1px solid #DDDACF; border-radius: var(--radius); background: #F6F4EF; color: #14181F; cursor: pointer; }
+  .submit-btn {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: var(--teal);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .submit-btn:hover { background: var(--teal-hover); }
+  .submit-btn:disabled { background: var(--disabled-bg); cursor: not-allowed; }
+  .example-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .chip { font-size: 12.5px; font-family: 'Inter', sans-serif; color: #0B6E6E; background: #E3EFEE; border: 1px solid transparent; border-radius: 20px; padding: 6px 13px; cursor: pointer; }
+  .chip:hover { border-color: #0B6E6E; }
+  .results { margin-top: 28px; }
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--ink-muted); }
+  .empty-state p { font-size: 14px; margin: 4px 0; }
+  .loading-state { padding: 40px 20px; text-align: center; }
+  .loading-pulse { width: 10px; height: 10px; background: var(--teal); border-radius: 50%; display: inline-block; animation: pulse 1.1s ease-in-out infinite; margin-right: 4px; }
+  .loading-pulse:nth-child(2) { animation-delay: 0.15s; }
+  .loading-pulse:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes pulse { 0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); } 40% { opacity: 1; transform: scale(1); } }
+  .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-muted); margin-top: 12px; letter-spacing: 0.03em; }
+  .error-state { background: var(--brick-soft); border: 1px solid var(--error-border); border-radius: var(--radius); padding: 18px 20px; }
+  .error-state .error-title { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: var(--brick); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .error-state p { font-size: 13.5px; color: var(--error-text); margin: 0; line-height: 1.5; }
+  .error-state .retry-btn { margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: none; border: 1px solid var(--brick); color: var(--brick); padding: 6px 12px; border-radius: var(--radius); cursor: pointer; }
+  .answer-card { background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .answer-status-bar { padding: 10px 20px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .answer-status-bar.answered { background: var(--teal-soft); color: var(--teal-dark); }
+  .answer-status-bar.refused { background: var(--brick-soft); color: var(--brick); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .answer-body { padding: 22px 24px 8px; font-family: 'Source Serif 4', serif; font-size: 17px; line-height: 1.7; color: var(--ink); }
+  .answer-body p { margin: 0 0 14px; }
+  .answer-body ul { margin: 0 0 14px; padding-left: 22px; }
+  .answer-body li { margin-bottom: 6px; }
+  .answer-body strong { font-weight: 600; }
+  .cite-tag { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; background: var(--teal-soft); color: var(--teal-dark); padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+  .caveat-note { margin: 0 24px 20px; padding: 10px 14px; background: var(--amber-soft); border-left: 3px solid var(--amber); font-size: 12.5px; color: var(--amber-ink); font-family: 'Inter', sans-serif; }
+  .citations-section { border-top: 1px solid var(--line); padding: 18px 24px 22px; }
+  .citations-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 12px; }
+  .citation-card { border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
+  .citation-head { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; background: var(--paper-raised); }
+  .citation-head:hover { background: var(--hover-bg); }
+  .citation-id { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--teal-dark); background: var(--teal-soft); padding: 2px 7px; border-radius: 3px; flex-shrink: 0; }
+  .citation-title { font-size: 13.5px; color: var(--ink); flex: 1; }
+  .citation-section-tag { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .expand-caret { font-family: 'IBM Plex Mono', monospace; color: var(--ink-muted); font-size: 12px; transition: transform 0.15s ease; }
+  .citation-card.expanded .expand-caret { transform: rotate(90deg); }
+  .citation-body { display: none; padding: 14px 16px 16px; border-top: 1px solid var(--line); background: var(--paper); }
+  .citation-card.expanded .citation-body { display: block; }
+  .evidence-block { background: var(--amber-soft); border-left: 3px solid var(--amber); padding: 12px 14px; margin-bottom: 12px; border-radius: 0 3px 3px 0; }
+  .evidence-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber-ink-muted); margin-bottom: 6px; }
+  .evidence-text { font-family: 'Source Serif 4', serif; font-style: italic; font-size: 14.5px; line-height: 1.6; color: var(--amber-ink); white-space: pre-wrap; }
+  .metadata-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px 16px; margin-top: 10px; }
+  .metadata-item { font-size: 12px; }
+  .metadata-key { font-family: 'IBM Plex Mono', monospace; color: var(--ink-muted); text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; display: block; margin-bottom: 2px; }
+  .metadata-value { color: var(--ink); }
+  .metadata-value a { color: var(--teal-dark); }
+  .evidence-loading { font-size: 12.5px; color: var(--ink-muted); font-family: 'IBM Plex Mono', monospace; }
+  footer { max-width: 920px; margin: 40px auto 0; padding: 16px 24px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-muted); font-family: 'IBM Plex Mono', monospace; }
+  @media (max-width: 600px) {
+    .filter-row { flex-direction: column; align-items: stretch; }
+    .submit-btn { margin-left: 0; }
+    .hero-row { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     AUTH SCREEN
+     ============================================================ -->
+<div id="authScreen">
+  <div class="auth-visual">
+    <div class="wordmark">TESTIMON<span>IA</span></div>
+    <div style="flex:1;"></div>
+    <div>
+      <div class="auth-tagline">Ask about clinical trials and published findings — every answer traced back to <em>an exact, inspectable source</em>.</div>
+      <div class="auth-footnote">HYPERTENSION · TYPE 2 DIABETES · BREAST CANCER — INDEXED CORPUS</div>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-form-wrap">
+      <div class="auth-eyebrow" id="authEyebrow">Sign in</div>
+      <h1 class="auth-heading" id="authHeading">Welcome back</h1>
+      <p class="auth-subtext" id="authSubtext">Sign in to search the indexed trial and literature database.</p>
+
+      <div id="nameField" style="display:none;" class="field-group">
+        <label class="field-label">Full name</label>
+        <input type="text" class="field-input" id="nameInput" placeholder="Jane Rivera">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <input type="email" class="field-input" id="emailInput" placeholder="you@example.com">
+        <div class="field-error" id="emailError"></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <input type="password" class="field-input" id="passwordInput" placeholder="••••••••">
+        <div class="field-hint-inline">At least 8 characters, with an uppercase letter, a number, and a symbol.</div>
+        <div class="field-error" id="passwordError"></div>
+      </div>
+
+      <button class="auth-submit" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign in</button>
+
+      <div class="auth-switch">
+        <span id="switchPrompt">Don't have an account?</span>
+        <a onclick="toggleAuthMode()" id="switchLink">Create one</a>
+      </div>
+      <div class="auth-guest"><a onclick="enterAsGuest()">Continue without an account →</a></div>
+
+      <div class="auth-demo-note">This is a portfolio demo — sign-in isn't connected to a real account system. Any details will work, and nothing is stored.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SCREEN
+     ============================================================ -->
+<div id="appScreen">
+  <div class="bg-glow bg-glow--1"></div>
+  <div class="bg-glow bg-glow--2"></div>
+  <div class="bg-glow bg-glow--3"></div>
+  <div id="cursorGlow"></div>
+
+  <nav class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-brand">TESTIMON<span>IA</span></div>
+      <div class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#ask">Ask</a>
+        <a href="#help">Help</a>
+      </div>
+      <div class="topbar-user">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <span id="userNameDisplay">Guest</span>
+        <span class="logout-link" onclick="logout()">Sign out</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ HOME ============ -->
+  <section class="page-section" id="home">
+    <div class="home-grid">
+      <div>
+        <div class="section-eyebrow">Evidence-grounded research</div>
+        <h1 class="home-heading">Ask questions about clinical trials — get answers traced to <em>an exact source</em>.</h1>
+        <p class="home-sub">Testimonia searches indexed trial records and published literature, and cites every claim it makes — or tells you plainly when it can't answer.</p>
+        <a href="#ask" class="cta-btn">Ask a question →</a>
+      </div>
+      <div class="illustration">
+        <div class="capsule capsule--1"></div>
+        <div class="capsule capsule--2"></div>
+        <div class="capsule capsule--3"></div>
+        <div class="molecule-orbit"><div class="dot"></div></div>
+        <div class="molecule-orbit molecule-orbit--2"><div class="dot dot--2"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="page-section" id="about">
+    <div class="section-eyebrow">About</div>
+    <h2 class="section-heading">What Testimonia does — and doesn't do</h2>
+    <div class="section-body">
+      <p><strong>This is an evidence-retrieval tool, not a medical advisor.</strong> Every answer is generated only from indexed clinical trial records and published abstracts, with citations you can inspect and expand. It does not diagnose, prescribe, or recommend treatment for any individual — for personal health concerns, talk to a clinician.</p>
+      <p>When the retrieved evidence doesn't support a confident answer, Testimonia says so directly rather than guessing — a deliberate design choice, not a limitation of the interface.</p>
+    </div>
+    <div class="about-facts">
+      <div class="about-fact"><div class="about-fact-num">3</div><div class="about-fact-label">Indexed conditions</div></div>
+      <div class="about-fact"><div class="about-fact-num">~1,100</div><div class="about-fact-label">Trials &amp; papers</div></div>
+      <div class="about-fact"><div class="about-fact-num">100%</div><div class="about-fact-label">Citation-traced</div></div>
+    </div>
+  </section>
+
+  <!-- ============ ASK ============ -->
+  <section class="page-section" id="ask">
+    <div class="section-eyebrow">Ask</div>
+    <h2 class="section-heading">What would you like to know?</h2>
+
+    <div class="disclaimer">
+      <span class="disclaimer-icon">!</span>
+      <div>Ask about trial design, eligibility, outcomes, or published findings — not your own symptoms or a personal diagnosis.</div>
+    </div>
+
+    <div class="query-panel">
+      <div class="panel-eyebrow">Ask your question here</div>
+      <div class="query-fields">
+        <textarea id="question" placeholder="e.g. What are common exclusion criteria for hypertension trials?"></textarea>
+        <div class="field-hint">Ask about trial design, eligibility, outcomes, or published findings — not your own symptoms or diagnosis.</div>
+        <div class="filter-row">
+          <span class="filter-label">Condition</span>
+          <select id="condition">
+            <option value="">All conditions</option>
+            <option value="hypertension">Hypertension</option>
+            <option value="type 2 diabetes">Type 2 diabetes</option>
+            <option value="breast cancer">Breast cancer</option>
+          </select>
+          <button class="submit-btn" id="submitBtn" onclick="submitQuestion()">Search evidence</button>
+        </div>
+        <div class="example-chips">
+          <div class="chip" onclick="useExample(this)">What are common exclusion criteria for hypertension trials?</div>
+          <div class="chip" onclick="useExample(this)">What percentage reduction in progression did metformin show?</div>
+          <div class="chip" onclick="useExample(this)">What study designs were used in liraglutide trials?</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results" id="results">
+      <div class="empty-state">
+        <p>Ask a question above to search the indexed trials and literature.</p>
+        <p style="font-size:12.5px;">Every answer is grounded in a specific, inspectable source — or the system tells you it can't answer.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HELP ============ -->
+  <section class="page-section" id="help">
+    <div class="section-eyebrow">Help</div>
+    <h2 class="section-heading">Frequently asked questions</h2>
+    <div class="faq-item">
+      <p class="faq-q">What can I ask?</p>
+      <p class="faq-a">Questions about trial design, eligibility criteria, outcomes, dosing reported in studies, or findings from published literature — within the indexed conditions (hypertension, type 2 diabetes, breast cancer).</p>
+    </div>
+    <div class="faq-item">
+      <p class="faq-q">Why did it refuse to answer?</p>
+      <p class="faq-a">Testimonia only answers when the retrieved evidence actually supports a claim. If your question is outside the indexed data, or asks for a personal diagnosis or dosage, it will say so rather than guess.</p>
+    </div>
+    <div class="faq-item">
+      <p class="faq-q">What does "low retrieval confidence" mean?</p>
+      <p class="faq-a">It means the closest matching evidence found wasn't a strong match for your question — the answer may still be useful, but is worth double-checking against the cited sources directly.</p>
+    </div>
+    <div class="faq-item">
+      <p class="faq-q">How do citations work?</p>
+      <p class="faq-a">Click any citation under an answer to expand it — you'll see the exact quoted passage the claim was based on, plus source metadata like trial phase or publication year.</p>
+    </div>
+  </section>
+
+  <footer>API: <span id="apiStatus">checking connection…</span></footer>
+</div>
+
+
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+let authMode = "signin"; // or "signup"
+
+function toggleAuthMode() {
+  authMode = authMode === "signin" ? "signup" : "signin";
+  const isSignup = authMode === "signup";
+  document.getElementById("authEyebrow").textContent = isSignup ? "Create account" : "Sign in";
+  document.getElementById("authHeading").textContent = isSignup ? "Get started" : "Welcome back";
+  document.getElementById("authSubtext").textContent = isSignup
+    ? "Create an account to search the indexed trial and literature database."
+    : "Sign in to search the indexed trial and literature database.";
+  document.getElementById("nameField").style.display = isSignup ? "block" : "none";
+  document.getElementById("authSubmitBtn").textContent = isSignup ? "Create account" : "Sign in";
+  document.getElementById("switchPrompt").textContent = isSignup ? "Already have an account?" : "Don't have an account?";
+  document.getElementById("switchLink").textContent = isSignup ? "Sign in" : "Create one";
+}
+
+function isValidEmail(email) {
+  // Standard, pragmatic email shape check: something@something.something
+  // Not exhaustive (true RFC 5322 validation is far more complex than any
+  // UI needs), but catches the mistakes that actually matter here.
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function getPasswordError(password) {
+  if (password.length < 8) return "Must be at least 8 characters.";
+  if (!/[A-Z]/.test(password)) return "Must include at least one capital letter.";
+  if (!/[0-9]/.test(password)) return "Must include at least one number.";
+  if (!/[^A-Za-z0-9]/.test(password)) return "Must include at least one symbol (e.g. ! @ # $).";
+  return null; // valid
+}
+
+function showFieldError(inputId, errorId, message) {
+  const input = document.getElementById(inputId);
+  const errorEl = document.getElementById(errorId);
+  input.classList.add("invalid");
+  errorEl.textContent = message;
+  errorEl.classList.add("visible");
+}
+
+function clearFieldError(inputId, errorId) {
+  document.getElementById(inputId).classList.remove("invalid");
+  const errorEl = document.getElementById(errorId);
+  errorEl.textContent = "";
+  errorEl.classList.remove("visible");
+}
+
+function handleAuthSubmit() {
+  const email = document.getElementById("emailInput").value.trim();
+  const password = document.getElementById("passwordInput").value;
+  const name = document.getElementById("nameInput").value.trim();
+
+  clearFieldError("emailInput", "emailError");
+  clearFieldError("passwordInput", "passwordError");
+
+  let hasError = false;
+
+  if (!email) {
+    showFieldError("emailInput", "emailError", "Enter an email address.");
+    hasError = true;
+  } else if (!isValidEmail(email)) {
+    showFieldError("emailInput", "emailError", "Enter a valid email address (e.g. name@example.com).");
+    hasError = true;
+  }
+
+  const passwordError = getPasswordError(password);
+  if (passwordError) {
+    showFieldError("passwordInput", "passwordError", passwordError);
+    hasError = true;
+  }
+
+  if (hasError) return;
+
+  const displayName = name || email.split("@")[0];
+  enterApp(displayName);
+}
+
+function enterAsGuest() {
+  enterApp("Guest");
+}
+
+function enterApp(displayName) {
+  document.getElementById("authScreen").style.display = "none";
+  document.getElementById("appScreen").style.display = "block";
+  document.getElementById("userNameDisplay").textContent = displayName;
+  document.getElementById("userAvatar").textContent = displayName.charAt(0).toUpperCase();
+
+  fetch(API_BASE + "/health")
+    .then(r => r.json())
+    .then(data => {
+      const statusText =
+        "connected — corpus " + (data.corpus_loaded ? "loaded" : "MISSING") +
+        ", vector db " + (data.vector_db_ready ? "ready" : "MISSING");
+      document.getElementById("apiStatus").textContent = statusText;
+    })
+    .catch(() => {
+      document.getElementById("apiStatus").textContent = "not reachable at " + API_BASE;
+    });
+
+  initCursorGlow();
+}
+
+// Only enable on devices with a real mouse pointer, and only if the user
+// hasn't asked for reduced motion — a touch device firing this on every tap
+// would be pointless, and reduced-motion users have explicitly opted out
+// of exactly this kind of decorative animation.
+let cursorGlowInitialized = false;
+function initCursorGlow() {
+  if (cursorGlowInitialized) return;
+  const hasFinePointer = window.matchMedia("(pointer: fine)").matches;
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!hasFinePointer || prefersReducedMotion) return;
+
+  const glow = document.getElementById("cursorGlow");
+  glow.style.display = "block";
+  document.addEventListener("mousemove", function(e) {
+    glow.style.left = e.clientX + "px";
+    glow.style.top = e.clientY + "px";
+  });
+  cursorGlowInitialized = true;
+}
+
+function logout() {
+  document.getElementById("appScreen").style.display = "none";
+  document.getElementById("authScreen").style.display = "grid";
+  document.getElementById("results").innerHTML =
+    '<div class="empty-state"><p>Ask a question above to search the indexed trials and literature.</p></div>';
+}
+
+function useExample(el) { document.getElementById("question").value = el.textContent; }
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function formatAnswer(text) {
+  let escaped = escapeHtml(text);
+  escaped = escaped.replace(/\[source:([^\]]*)\]/gi, function(match, inner) {
+    const ids = inner.match(/NCT\d+|PMID\s*\d+/gi) || [];
+    return ids.map(function(id) { return '<span class="cite-tag">' + id.toUpperCase() + '</span>'; }).join(" ");
+  });
+  escaped = escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  const lines = escaped.split("\n");
+  let html = "";
+  let inList = false;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (trimmed.indexOf("* ") === 0 || trimmed.indexOf("- ") === 0) {
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += "<li>" + trimmed.slice(2) + "</li>";
+    } else {
+      if (inList) { html += "</ul>"; inList = false; }
+      if (trimmed) html += "<p>" + trimmed + "</p>";
+    }
+  }
+  if (inList) html += "</ul>";
+  return html;
+}
+
+async function submitQuestion() {
+  const question = document.getElementById("question").value.trim();
+  const condition = document.getElementById("condition").value;
+  const resultsEl = document.getElementById("results");
+  const btn = document.getElementById("submitBtn");
+
+  if (!question) {
+    resultsEl.innerHTML = '<div class="error-state"><div class="error-title">Empty question</div><p>Type a question before searching — the field can\'t be blank.</p></div>';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Searching…";
+
+  const loadingMessages = ["Retrieving evidence…", "Ranking sources…", "Checking citations…"];
+  let msgIndex = 0;
+  resultsEl.innerHTML =
+    '<div class="loading-state"><div><span class="loading-pulse"></span><span class="loading-pulse"></span><span class="loading-pulse"></span></div><div class="loading-text" id="loadingText">' + loadingMessages[0] + "</div></div>";
+  const loadingInterval = setInterval(function() {
+    msgIndex = (msgIndex + 1) % loadingMessages.length;
+    const el = document.getElementById("loadingText");
+    if (el) el.textContent = loadingMessages[msgIndex];
+  }, 2200);
+
+  try {
+    const body = { question: question };
+    if (condition) body.condition = condition;
+
+    const response = await fetch(API_BASE + "/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    clearInterval(loadingInterval);
+
+    if (!response.ok) {
+      const errData = await response.json().catch(function() { return {}; });
+      throw new Error(errData.detail || ("Server returned " + response.status));
+    }
+
+    const data = await response.json();
+    renderAnswer(data);
+
+  } catch (err) {
+    clearInterval(loadingInterval);
+    resultsEl.innerHTML =
+      '<div class="error-state"><div class="error-title">Couldn\'t complete the search</div><p>' + escapeHtml(err.message) + '</p><p style="margin-top:6px;">Check that the backend is running at <span class="mono">' + API_BASE + '</span>.</p><button class="retry-btn" onclick="submitQuestion()">Try again</button></div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Search evidence";
+  }
+}
+
+function renderAnswer(data) {
+  const resultsEl = document.getElementById("results");
+  const statusClass = data.refused ? "refused" : "answered";
+  const statusLabel = data.refused ? "Refused — insufficient evidence" : "Answered";
+
+  let caveatHtml = "";
+  if (!data.refused && data.answer.indexOf("could not be independently") !== -1) {
+    caveatHtml = '<div class="caveat-note">Note: this answer includes a figure that could not be fully confirmed against the retrieved evidence. Review the citations below before relying on it.</div>';
+  }
+
+  let citationsHtml = "";
+  if (data.citations && data.citations.length > 0) {
+    // Deduplicate by (source ID + section): the backend can legitimately
+    // retrieve two different CHUNKS from the same paper/trial (e.g. an
+    // abstract split into two pieces), which previously rendered as two
+    // identical-looking citation cards — confusing, since it's really one
+    // source. Keep only the first occurrence of each unique source+section.
+    const seen = new Set();
+    const dedupedCitations = data.citations.filter(function(c) {
+      const key = (c.nct_id || c.pmid) + "::" + c.section;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    citationsHtml = '<div class="citations-section"><div class="citations-eyebrow">Sources cited (' + dedupedCitations.length + ')</div>' +
+      dedupedCitations.map(function(c, i) { return renderCitationCard(c, i); }).join("") + "</div>";
+  }
+
+  resultsEl.innerHTML =
+    '<div class="answer-card"><div class="answer-status-bar ' + statusClass + '"><span class="status-dot"></span>' + statusLabel +
+    (data.low_confidence ? '<span style="margin-left:8px; opacity:0.7;">· low retrieval confidence</span>' : '') + '</div>' +
+    '<div class="answer-body">' + formatAnswer(data.answer) + '</div>' + caveatHtml + citationsHtml + '</div>';
+}
+
+function renderCitationCard(citation, index) {
+  const id = citation.nct_id || ("PMID " + citation.pmid);
+  return (
+    '<div class="citation-card" id="citation-' + index + '">' +
+    '<div class="citation-head" onclick="toggleCitation(' + index + ", '" + (citation.nct_id || '') + "', '" + (citation.pmid || '') + "', '" + escapeHtml(citation.section) + '\')">' +
+    '<span class="citation-id">' + id + '</span>' +
+    '<span class="citation-title">' + escapeHtml(citation.title) + '</span>' +
+    '<span class="citation-section-tag">' + escapeHtml(citation.section.replace(/_/g, ' ')) + '</span>' +
+    '<span class="expand-caret">▸</span></div>' +
+    '<div class="citation-body"></div></div>'
+  );
+}
+
+async function toggleCitation(index, nctId, pmid, section) {
+  const card = document.getElementById("citation-" + index);
+  const body = card.querySelector(".citation-body");
+  const isExpanding = !card.classList.contains("expanded");
+  card.classList.toggle("expanded");
+
+  if (isExpanding && !body.dataset.loaded) {
+    body.innerHTML = '<div class="evidence-loading">Loading evidence…</div>';
+    try {
+      const path = nctId ? ("/trials/" + nctId) : ("/papers/" + pmid);
+      const response = await fetch(API_BASE + path);
+      if (!response.ok) throw new Error("Source not found");
+      const source = await response.json();
+
+      const matchingSection = source.sections.find(function(s) { return s.section_name === section; });
+      const evidenceText = matchingSection ? matchingSection.text : "(section text not found)";
+
+      const metaEntries = Object.entries(source.metadata || {})
+        .filter(function(entry) { return entry[1] && (!Array.isArray(entry[1]) || entry[1].length); })
+        .map(function(entry) {
+          const k = entry[0], v = entry[1];
+          let displayValue = Array.isArray(v) ? v.join(", ") : v;
+          if (k === "doi") displayValue = '<a href="https://doi.org/' + v + '" target="_blank">' + v + "</a>";
+          if (k === "pmcid") displayValue = '<a href="https://www.ncbi.nlm.nih.gov/pmc/articles/' + v + '/" target="_blank">' + v + "</a>";
+          return '<div class="metadata-item"><span class="metadata-key">' + k.replace(/_/g, ' ') + '</span><span class="metadata-value">' + displayValue + "</span></div>";
+        }).join("");
+
+      body.innerHTML =
+        '<div class="evidence-block"><div class="evidence-eyebrow">Quoted evidence — ' + section.replace(/_/g, ' ') + '</div>' +
+        '<div class="evidence-text">' + escapeHtml(evidenceText) + '</div></div>' +
+        (metaEntries ? '<div class="metadata-grid">' + metaEntries + '</div>' : "");
+      body.dataset.loaded = "true";
+    } catch (err) {
+      body.innerHTML = '<div class="evidence-loading">Couldn\'t load evidence: ' + escapeHtml(err.message) + '</div>';
+    }
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  const q = document.getElementById("question");
+  if (q) {
+    q.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitQuestion(); }
+    });
+  }
+});
+</script>
+
+</body>
+</html>
