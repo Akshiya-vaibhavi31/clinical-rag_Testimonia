@@ -51,7 +51,7 @@ jobs:
         # external call (Gemini, embeddings), so it runs correctly without
         # live secrets. A failing test here means a real problem, not a
         # missing-secret problem.
-        run: pytest tests/ -v
+        run: python -m pytest tests/ -v
 
   # ============================================================
   # JOB 2: Docker build verification
