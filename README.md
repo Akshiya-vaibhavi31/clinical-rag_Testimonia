@@ -123,7 +123,7 @@ cp .env.example .env
 # edit .env with your real NCBI and Gemini API keys
 ```
 
-### Build the data pipeline (first-time setup)
+### Build the data pipeline 
 
 ```bash
 python -m src.ingest_trials
@@ -144,13 +144,12 @@ Visit `http://127.0.0.1:8000/docs` for interactive API documentation.
 
 ### Run the frontend
 
-Open `frontend/index.html` with a local server (e.g. VS Code's Live
-Server extension), or serve it directly:
+Open `frontend/index.html` with a local server 
 ```bash
 cd frontend && python3 -m http.server 5500
 ```
 The backend must be running first — the frontend calls
-`http://127.0.0.1:8000` directly.
+`http://127.0.0.1:8000` 
 
 ### Run the evaluation
 
@@ -181,7 +180,7 @@ python -m src.test_prompt_injection
   project's actual scale (single local user) rather than over-building
   infrastructure. See `src/database.py` for the full reasoning.
 
-## Known limitations (documented honestly)
+## Known limitations 
 
 - Numeric claim verification is lexical/heuristic, not true semantic
   entailment — it can produce false positives on claims involving
