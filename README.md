@@ -181,7 +181,7 @@ python -m src.test_prompt_injection
   project's actual scale (single local user) rather than over-building
   infrastructure. See `src/database.py` for the full reasoning.
 
-## Known limitations (documented honestly)
+## Known limitations 
 
 - Numeric claim verification is lexical/heuristic, not true semantic
   entailment — it can produce false positives on claims involving
