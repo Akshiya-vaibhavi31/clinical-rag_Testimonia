@@ -55,10 +55,7 @@ def normalize_source_id(source_id: str) -> str:
 
 
 def get_source_label(chunk: dict) -> str:
-    return (
-        chunk["source_id"] if chunk["source_type"] == "clinical_trial"
-        else f"PMID {chunk['source_id']}"
-    )
+    return chunk["source_id"] if chunk["source_type"] == "clinical_trial" else f"PMID {chunk['source_id']}"
 
 
 def evaluate_single_question(eval_item: dict, embedding_model) -> dict:
@@ -91,7 +88,11 @@ def evaluate_single_question(eval_item: dict, embedding_model) -> dict:
     citation_completeness = compute_citation_completeness(result["answer_text"])
 
     # --- Safety metrics ---
-    safety = compute_safety_metrics(verification) if verification else {"unsupported_claim_rate": None, "hallucination_rate": None}
+    safety = (
+        compute_safety_metrics(verification)
+        if verification
+        else {"unsupported_claim_rate": None, "hallucination_rate": None}
+    )
 
     return {
         "id": eval_item["id"],
@@ -137,14 +138,12 @@ def compute_aggregate_metrics(results: list[dict]) -> dict:
 
     system_refused = [r for r in results if r["actual_refused"]]
     refusal_precision = (
-        sum(1 for r in system_refused if not r["expected_answerable"]) / len(system_refused)
-        if system_refused else None
+        sum(1 for r in system_refused if not r["expected_answerable"]) / len(system_refused) if system_refused else None
     )
 
     should_refuse = [r for r in results if not r["expected_answerable"]]
     refusal_recall = (
-        sum(1 for r in should_refuse if r["actual_refused"]) / len(should_refuse)
-        if should_refuse else None
+        sum(1 for r in should_refuse if r["actual_refused"]) / len(should_refuse) if should_refuse else None
     )
 
     total_citations_all = sum(r["total_citations"] for r in results)
@@ -179,38 +178,35 @@ def compute_aggregate_metrics(results: list[dict]) -> dict:
         "total_questions": total,
         "answerable_questions": len(answerable_results),
         "unanswerable_questions": len(unanswerable_results),
-
         "--- SAFETY (refusal behavior) ---": "---",
         "overall_refusal_decision_accuracy": round(overall_accuracy, 3),
         "refusal_precision": round(refusal_precision, 3) if refusal_precision is not None else None,
         "refusal_recall": round(refusal_recall, 3) if refusal_recall is not None else None,
-
         "--- RETRIEVAL (pre-rerank, hybrid fusion order) ---": "---",
         "recall_at_5_pre_rerank": average_metric(answerable_results, "retrieval_metrics_pre_rerank", "recall_at_k"),
-        "precision_at_5_pre_rerank": average_metric(answerable_results, "retrieval_metrics_pre_rerank", "precision_at_k"),
+        "precision_at_5_pre_rerank": average_metric(
+            answerable_results, "retrieval_metrics_pre_rerank", "precision_at_k"
+        ),
         "mrr_pre_rerank": average_metric(answerable_results, "retrieval_metrics_pre_rerank", "mrr"),
         "ndcg_at_5_pre_rerank": average_metric(answerable_results, "retrieval_metrics_pre_rerank", "ndcg_at_k"),
-
         "--- RETRIEVAL (post-rerank, final evidence) ---": "---",
         "recall_at_5_post_rerank": average_metric(answerable_results, "retrieval_metrics_post_rerank", "recall_at_k"),
-        "precision_at_5_post_rerank": average_metric(answerable_results, "retrieval_metrics_post_rerank", "precision_at_k"),
+        "precision_at_5_post_rerank": average_metric(
+            answerable_results, "retrieval_metrics_post_rerank", "precision_at_k"
+        ),
         "mrr_post_rerank": average_metric(answerable_results, "retrieval_metrics_post_rerank", "mrr"),
         "ndcg_at_5_post_rerank": average_metric(answerable_results, "retrieval_metrics_post_rerank", "ndcg_at_k"),
-
         "--- GENERATION QUALITY ---": "---",
         "faithfulness": average_metric(results, "faithfulness"),
         "answer_relevance": average_metric(results, "answer_relevance"),
         "citation_completeness": average_metric(results, "citation_completeness"),
-
         "--- SAFETY (citation-level, per-citation pooled — can be skewed by one verbose answer) ---": "---",
         "unsupported_claim_rate": average_metric(results, "unsupported_claim_rate"),
         "hallucination_rate_per_citation": average_metric(results, "hallucination_rate"),
         "fabrication_rate": round(fabrication_rate, 4),
         "numeric_mismatch_rate": round(total_numeric_mismatch / total_citations_all, 4) if total_citations_all else 0,
-
         "--- SAFETY (per-question, fairer summary) ---": "---",
         "hallucination_rate_per_question": round(per_question_hallucination_rate, 3),
-
         "questions_that_triggered_regeneration": sum(1 for r in results if r["regenerated"]),
     }
 
@@ -221,8 +217,10 @@ def print_report(results: list[dict], metrics: dict):
     print("=" * 70)
     for r in results:
         status = "PASS" if r["refusal_correct"] else "FAIL"
-        print(f"[{status}] [{r['id']}] ({r['question_type']}) refused={r['actual_refused']} "
-              f"expected_answerable={r['expected_answerable']}")
+        print(
+            f"[{status}] [{r['id']}] ({r['question_type']}) refused={r['actual_refused']} "
+            f"expected_answerable={r['expected_answerable']}"
+        )
         if r["fabricated_count"] > 0 or r["numeric_mismatch_count"] > 0:
             print(f"    WARNING: fabricated={r['fabricated_count']} numeric_mismatch={r['numeric_mismatch_count']}")
 
@@ -242,8 +240,7 @@ def print_report(results: list[dict], metrics: dict):
     if not wrong:
         print("  Nothing — all refusal decisions were correct.")
     for r in wrong:
-        print(f"  [{r['id']}] Expected answerable={r['expected_answerable']}, "
-              f"but system refused={r['actual_refused']}")
+        print(f"  [{r['id']}] Expected answerable={r['expected_answerable']}, but system refused={r['actual_refused']}")
         print(f"    Question: {r['question']}")
         print(f"    Answer given: {r['answer_text'][:200]}...")
         print()
@@ -283,6 +280,7 @@ def run():
         print("Loading embedding model (used for the answer_relevance metric)...")
         from sentence_transformers import SentenceTransformer
         from src.config import EMBEDDING_MODELS, ACTIVE_EMBEDDING_MODEL
+
         embedding_model = SentenceTransformer(EMBEDDING_MODELS[ACTIVE_EMBEDDING_MODEL])
 
         print("Running each through the live pipeline — this will take a while (real API calls)...\n")
@@ -303,7 +301,7 @@ def run():
                 error_str = str(e)
                 if "GEMINI_DAILY_QUOTA_EXHAUSTED" in error_str or "GEMINI_RATE_LIMIT_PERSISTENT" in error_str:
                     reason = "Daily API quota exhausted" if "DAILY" in error_str else "Persistent rate limiting"
-                    print(f"\n{'='*70}")
+                    print(f"\n{'=' * 70}")
                     print(f"STOPPING: {reason}.")
                     print(f"Progress saved: {len(results)}/{len(eval_set)} questions completed.")
                     if "DAILY" in error_str:
@@ -312,33 +310,35 @@ def run():
                     else:
                         print("Wait a few minutes, then run 'python -m src.run_evaluation' again")
                         print("to continue from where this left off (checkpoint is saved).")
-                    print(f"{'='*70}")
+                    print(f"{'=' * 70}")
                     return
                 raise
             except Exception as e:
                 print(f"  ERROR on {eval_item['id']}: {e}")
-                results.append({
-                    "id": eval_item["id"],
-                    "question_type": eval_item["question_type"],
-                    "question": eval_item["question"],
-                    "expected_answerable": eval_item["expected_answerable"],
-                    "actual_refused": None,
-                    "refusal_correct": False,
-                    "retrieval_metrics_pre_rerank": None,
-                    "retrieval_metrics_post_rerank": None,
-                    "faithfulness": None,
-                    "answer_relevance": None,
-                    "citation_completeness": None,
-                    "unsupported_claim_rate": None,
-                    "hallucination_rate": None,
-                    "cited_source_ids": [],
-                    "expected_source_ids": eval_item["expected_source_ids"],
-                    "fabricated_count": 0,
-                    "numeric_mismatch_count": 0,
-                    "total_citations": 0,
-                    "regenerated": False,
-                    "answer_text": f"ERROR: {e}",
-                })
+                results.append(
+                    {
+                        "id": eval_item["id"],
+                        "question_type": eval_item["question_type"],
+                        "question": eval_item["question"],
+                        "expected_answerable": eval_item["expected_answerable"],
+                        "actual_refused": None,
+                        "refusal_correct": False,
+                        "retrieval_metrics_pre_rerank": None,
+                        "retrieval_metrics_post_rerank": None,
+                        "faithfulness": None,
+                        "answer_relevance": None,
+                        "citation_completeness": None,
+                        "unsupported_claim_rate": None,
+                        "hallucination_rate": None,
+                        "cited_source_ids": [],
+                        "expected_source_ids": eval_item["expected_source_ids"],
+                        "fabricated_count": 0,
+                        "numeric_mismatch_count": 0,
+                        "total_citations": 0,
+                        "regenerated": False,
+                        "answer_text": f"ERROR: {e}",
+                    }
+                )
                 save_checkpoint(results)
 
     metrics = compute_aggregate_metrics(results)

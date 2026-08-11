@@ -45,10 +45,17 @@ from src.hybrid_retrieval import hybrid_search_raw
 from src.citations import build_citation_record
 from src.database import init_db, log_query_and_answer, get_source as get_db_source
 from src.api.schemas import (
-    SearchRequest, AskRequest, CompareRequest,
-    SearchResponse, AskResponse, CompareResponse,
-    ChunkResult, CitationInfo, VerificationSummary,
-    SourceDetail, HealthResponse,
+    SearchRequest,
+    AskRequest,
+    CompareRequest,
+    SearchResponse,
+    AskResponse,
+    CompareResponse,
+    ChunkResult,
+    CitationInfo,
+    VerificationSummary,
+    SourceDetail,
+    HealthResponse,
 )
 
 # ---------- Configuration via environment variables ----------
@@ -117,7 +124,10 @@ async def log_requests(request: Request, call_next):
     duration_ms = (time.time() - start_time) * 1000
     logger.info(
         "%s %s -> %s (%.1fms)",
-        request.method, request.url.path, response.status_code, duration_ms,
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
     )
     return response
 
@@ -139,6 +149,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 def load_all_chunks() -> list[dict]:
     """Load the full chunk corpus from disk."""
     import json
+
     chunks_path = PROJECT_ROOT / "data" / "processed" / "chunks.jsonl"
     chunks = []
     with open(chunks_path, "r", encoding="utf-8") as f:
@@ -153,15 +164,17 @@ def chunks_to_citation_infos(evidence_chunks: list[dict]) -> list[CitationInfo]:
     infos = []
     for chunk in evidence_chunks:
         record = build_citation_record(chunk)
-        infos.append(CitationInfo(
-            source_type=record["source_type"],
-            nct_id=record["nct_id"],
-            pmid=record["pmid"],
-            pmcid=record["pmcid"],
-            doi=record["doi"],
-            title=record["title"],
-            section=record["section"],
-        ))
+        infos.append(
+            CitationInfo(
+                source_type=record["source_type"],
+                nct_id=record["nct_id"],
+                pmid=record["pmid"],
+                pmcid=record["pmcid"],
+                doi=record["doi"],
+                title=record["title"],
+                section=record["section"],
+            )
+        )
     return infos
 
 
@@ -312,9 +325,14 @@ async def ask(request: Request, body: AskRequest):
         raise HTTPException(status_code=500, detail="Failed to generate an answer due to an internal error.") from e
 
     log_query_and_answer(
-        question=body.question, condition_filter=body.condition, low_confidence=result["low_confidence"],
-        answer_text=result["answer_text"], refused=result["refused"],
-        verification_report=result["verification_report"], llm_model=GEMINI_MODEL_NAME, prompt_version=PROMPT_VERSION,
+        question=body.question,
+        condition_filter=body.condition,
+        low_confidence=result["low_confidence"],
+        answer_text=result["answer_text"],
+        refused=result["refused"],
+        verification_report=result["verification_report"],
+        llm_model=GEMINI_MODEL_NAME,
+        prompt_version=PROMPT_VERSION,
     )
 
     return AskResponse(

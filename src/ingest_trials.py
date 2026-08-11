@@ -1,8 +1,7 @@
 """
 ingest_trials.py
 
-Run this script to download clinical trial data for all target conditions
-and save it to disk. This is Phase 2, step 1.
+Run this script for clinical trial data for all target conditions.
 
 Usage:
     python -m src.ingest_trials

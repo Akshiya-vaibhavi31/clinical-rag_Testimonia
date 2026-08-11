@@ -211,10 +211,7 @@ def format_metadata(chunk: dict) -> str:
 def build_user_prompt(question: str, evidence_chunks: list[dict]) -> str:
     evidence_text = ""
     for i, chunk in enumerate(evidence_chunks, start=1):
-        source_label = (
-            chunk["source_id"] if chunk["source_type"] == "clinical_trial"
-            else f"PMID {chunk['source_id']}"
-        )
+        source_label = chunk["source_id"] if chunk["source_type"] == "clinical_trial" else f"PMID {chunk['source_id']}"
         metadata_line = format_metadata(chunk)
 
         evidence_text += f"\n--- Evidence chunk {i} (source: {source_label}) ---\n"
@@ -232,7 +229,9 @@ Evidence retrieved from the corpus:
 Answer the question using ONLY the evidence above, following all the rules you were given. Where relevant, use the metadata (e.g. trial phase, publication year) to add useful context or caveats to your answer."""
 
 
-def build_correction_prompt(question: str, evidence_chunks: list[dict], failed_answer: str, verification_report: dict) -> str:
+def build_correction_prompt(
+    question: str, evidence_chunks: list[dict], failed_answer: str, verification_report: dict
+) -> str:
     """
     Builds a follow-up prompt that shows the model exactly which of its own
     claims failed verification and why, then asks it to fix them. This is
@@ -241,17 +240,18 @@ def build_correction_prompt(question: str, evidence_chunks: list[dict], failed_a
     """
     evidence_text = ""
     for i, chunk in enumerate(evidence_chunks, start=1):
-        source_label = (
-            chunk["source_id"] if chunk["source_type"] == "clinical_trial"
-            else f"PMID {chunk['source_id']}"
-        )
+        source_label = chunk["source_id"] if chunk["source_type"] == "clinical_trial" else f"PMID {chunk['source_id']}"
         evidence_text += f"\n--- Evidence chunk {i} (source: {source_label}) ---\n{chunk['text']}\n"
 
     problems = []
     for source_id in verification_report["fabricated_source_ids"]:
-        problems.append(f"- You cited [source: {source_id}], but that source was never provided as evidence. This citation must be removed or replaced with a real source.")
+        problems.append(
+            f"- You cited [source: {source_id}], but that source was never provided as evidence. This citation must be removed or replaced with a real source."
+        )
     for detail in verification_report["numeric_mismatch_details"]:
-        problems.append(f"- You wrote \"{detail['sentence']}\" citing [source: {detail['source_id']}], but the number(s) {detail['unsupported_numbers']} do not appear anywhere in that source's text. Remove this specific number or correct it to match what the evidence actually says.")
+        problems.append(
+            f'- You wrote "{detail["sentence"]}" citing [source: {detail["source_id"]}], but the number(s) {detail["unsupported_numbers"]} do not appear anywhere in that source\'s text. Remove this specific number or correct it to match what the evidence actually says.'
+        )
 
     problems_text = "\n".join(problems)
 
@@ -285,17 +285,17 @@ REFUSAL_PHRASES = [
     "cannot provide a patient-specific",
     "i can't provide",
     "do not have personal",  # was "i do not have personal" — missed
-                              # phrasings like "I am an AI and do not have
-                              # personal opinions" where "i" isn't
-                              # immediately adjacent (a real grading gap
-                              # found in eval_031, where the system
-                              # correctly declined to give a personal
-                              # opinion but our own grading script didn't
-                              # recognize the wording as a refusal)
+    # phrasings like "I am an AI and do not have
+    # personal opinions" where "i" isn't
+    # immediately adjacent (a real grading gap
+    # found in eval_031, where the system
+    # correctly declined to give a personal
+    # opinion but our own grading script didn't
+    # recognize the wording as a refusal)
     "not permitted to provide",  # was "i am not permitted to provide"
     "cannot give personalized medical advice",
     "do not have personal opinions",
-    "cannot determine the \"best\"",
+    'cannot determine the "best"',
 ]
 
 PERSONAL_OPINION_REFUSAL_PATTERN = re.compile(
@@ -355,7 +355,9 @@ def generate_with_retry(client, model, contents, config, max_retries: int = 5):
                     ) from e
                 # Per-minute limit — wait longer each attempt: 15s, 30s, 45s, 60s, 75s
                 wait_seconds = 15 * (attempt + 1)
-                print(f"    Rate limited (per-minute), waiting {wait_seconds}s before retry {attempt + 1}/{max_retries}...")
+                print(
+                    f"    Rate limited (per-minute), waiting {wait_seconds}s before retry {attempt + 1}/{max_retries}..."
+                )
                 time.sleep(wait_seconds)
             else:
                 raise
@@ -369,7 +371,9 @@ def detect_explicit_ids_in_question(question: str) -> list[str]:
     return detect_explicit_ids(question)
 
 
-def answer_question(question: str, condition_filter: str = None, top_k: int = 5, candidate_pool_size: int = 15, verbose: bool = True) -> dict:
+def answer_question(
+    question: str, condition_filter: str = None, top_k: int = 5, candidate_pool_size: int = 15, verbose: bool = True
+) -> dict:
     """
     Runs the full pipeline for one question.
 
@@ -382,17 +386,18 @@ def answer_question(question: str, condition_filter: str = None, top_k: int = 5,
     Returns a structured result dict so callers (like the eval runner) can
     programmatically check what happened, instead of just seeing printed text.
     """
+
     def log(msg=""):
         if verbose:
             print(msg)
 
-    log(f"\nQuestion (original): \"{question}\"")
+    log(f'\nQuestion (original): "{question}"')
 
     # --- Question preprocessing (the last remaining gap) ---
     preprocessed = preprocess_question(question)
     question = preprocessed["processed"]  # use the cleaned version from here on
     if preprocessed["was_modified"]:
-        log(f"Question (after preprocessing): \"{question}\"")
+        log(f'Question (after preprocessing): "{question}"')
         if preprocessed["abbreviation_changes"]:
             log(f"  Abbreviations expanded: {preprocessed['abbreviation_changes']}")
         if preprocessed["typo_changes"]:
@@ -450,9 +455,11 @@ def answer_question(question: str, condition_filter: str = None, top_k: int = 5,
     evidence_chunks = rerank_chunks(question, candidates, top_k=top_k, pinned_source_ids=explicit_ids)
 
     if low_confidence:
-        log(f"\n⚠️  LOW CONFIDENCE: best semantic match score was only "
+        log(
+            f"\n⚠️  LOW CONFIDENCE: best semantic match score was only "
             f"{retrieval_result['top_semantic_score']:.3f}. Proceeding anyway, "
-            f"but expect the model to likely refuse or hedge.")
+            f"but expect the model to likely refuse or hedge."
+        )
 
     log(f"Final evidence set: {len(evidence_chunks)} chunks (reranker scores shown below)")
     for chunk in evidence_chunks:
@@ -463,9 +470,7 @@ def answer_question(question: str, condition_filter: str = None, top_k: int = 5,
     client = genai.Client(api_key=GEMINI_API_KEY)
     user_prompt = build_user_prompt(question, evidence_chunks)
 
-    response = generate_with_retry(
-        client, GEMINI_MODEL_NAME, user_prompt, {"system_instruction": SYSTEM_PROMPT}
-    )
+    response = generate_with_retry(client, GEMINI_MODEL_NAME, user_prompt, {"system_instruction": SYSTEM_PROMPT})
     answer_text = response.text
 
     # --- Citation verification (Phase 9/13) ---
@@ -526,14 +531,15 @@ def answer_question(question: str, condition_filter: str = None, top_k: int = 5,
             # disclosure, consistent with the project's core "don't guess,
             # be upfront about uncertainty" principle, just applied at the
             # claim level instead of the whole-answer level.
-            log("\n⚠️ Regeneration still has an unconfirmed number (no fabricated source). "
-                "Keeping the answer with a caveat rather than discarding otherwise-valid content.")
+            log(
+                "\n⚠️ Regeneration still has an unconfirmed number (no fabricated source). "
+                "Keeping the answer with a caveat rather than discarding otherwise-valid content."
+            )
             flagged_numbers = set()
             for detail in retry_report["numeric_mismatch_details"]:
                 flagged_numbers.update(detail["unsupported_numbers"])
             answer_text = (
-                retry_response.text
-                + f"\n\n⚠️ Note: the following figure(s) in this answer could not be independently "
+                retry_response.text + f"\n\n⚠️ Note: the following figure(s) in this answer could not be independently "
                 f"confirmed against the retrieved evidence and should be treated with caution: "
                 f"{', '.join(sorted(flagged_numbers))}."
             )
@@ -555,8 +561,7 @@ def answer_question(question: str, condition_filter: str = None, top_k: int = 5,
         print("=" * 60)
         for i, chunk in enumerate(evidence_chunks, start=1):
             source_label = (
-                chunk["source_id"] if chunk["source_type"] == "clinical_trial"
-                else f"PMID {chunk['source_id']}"
+                chunk["source_id"] if chunk["source_type"] == "clinical_trial" else f"PMID {chunk['source_id']}"
             )
             print(f"[{i}] {source_label} — {chunk['title'][:70]}")
             print(f"    Section: {chunk['section_name']} | rerank_score={chunk['rerank_score']:.3f}")
